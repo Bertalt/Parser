@@ -9,6 +9,8 @@ private static String TEST_URL = "http://www.056.ua";
     private static String TEST_URL_PATH = "/job";
     private static int TEST_DEPTH = 1;
     public static void main(String [] args)  {
+        long start = System.currentTimeMillis();
+
 
         //Scanner sc = new Scanner(System.in);
 
@@ -20,7 +22,9 @@ private static String TEST_URL = "http://www.056.ua";
 
         Parser mParser = new Parser(TEST_URL, TEST_URL_PATH, TEST_DEPTH);
 
+        long finish = System.currentTimeMillis();
 
+        System.out.println("Время выполнения "+ (finish - start));
 
     }
 

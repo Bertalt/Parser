@@ -5,9 +5,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,14 +24,17 @@ public class ParserRun implements Callable<HashSet> {
     private static String mUrlHome;
     private static String mUrlPath;
     private HashSet<String> mSetUrl;
+    private final int bufferSize = 100000;
+    private Set<String> mSynchronSet;
 
     public ParserRun(String home, String path)
     {
         mUrlHome = home;
         mUrlPath = path;
-        //foundUrl = new HashSet<String>();
+
         mSetUrl = new HashSet<>();
         PATTERN_URL = Pattern.compile(Parser.REG_EX_URL);
+        mSynchronSet = Collections.synchronizedSet(mSetUrl);
         PATTERN_URL_DOT = Pattern.compile(Parser.REG_EX_URL_DOT);
     }
 
@@ -39,15 +44,29 @@ public class ParserRun implements Callable<HashSet> {
     @Override
     public HashSet<String> call() throws Exception {
 
+
         BufferedReader buffer;
-        String nextLine;
+       // String nextLine = null;
+
+        StringBuffer mStringBuffer = new StringBuffer();
         if((buffer = getBufferFromUrl(mUrlHome+mUrlPath))==null) {
              return null;
+
         }
-        while ((nextLine =buffer.readLine())!=null)
-        {
-            checkStringToUrl(nextLine);
-        }
+
+        int count =0;
+            while (true) {
+                char [] nextLine= new char [bufferSize];
+                if (buffer.read(nextLine)== -1)
+                                        break;
+
+                mStringBuffer.append(nextLine);
+                count++;
+
+            }
+        System.out.println(count);
+       // System.out.println(mStringBuffer.toString());
+        checkStringToUrl(mStringBuffer.toString());
 
         buffer.close();
         return mSetUrl;
@@ -55,31 +74,48 @@ public class ParserRun implements Callable<HashSet> {
 
     private void checkStringToUrl(String s)
     {
-        Matcher matcher = PATTERN_URL.matcher(s);
+
+                Matcher matcher_dot = PATTERN_URL_DOT.matcher(s);
+                while (matcher_dot.find())
+                {
+                    //System.out.println(s.substring((matcher_dot.start()),matcher_dot.end()));
+                    String tmp =(new StringBuilder().append(mUrlHome).append(s.substring((matcher_dot.start()+6),matcher_dot.end()))).toString();
+
+                    if(tmp.contains(mUrlHome+mUrlPath))    //проверяем является ли ссылка дочерней относительно исходной
+                        if (checkUrl(tmp))
+                             mSynchronSet.add(tmp);
 
 
-        //System.out.println(matcher.find());
-        while (matcher.find())
-        {
-            String tmp = s.substring(matcher.start(),matcher.end());
-            if (tmp.contains(mUrlHome))
-            //   if ((getBufferFromUrl(tmp)!=null))
-                mSetUrl.add(tmp);
-        }
+                }
 
 
-        Matcher matcher_dot = PATTERN_URL_DOT.matcher(s);
-        while (matcher_dot.find())
-        {
-            //System.out.println(s.substring((matcher_dot.start()),matcher_dot.end()));
-            String tmp =s.substring((matcher_dot.start()+6),matcher_dot.end());
-
-              // if ((getBufferFromUrl(mUrlHome+tmp)!=null))
-                mSetUrl.add(mUrlHome+tmp);
-
-        }
 
     }
+
+    private boolean checkUrl(String link)  {
+        URL url = null;
+        try {
+            url = new URL(link);
+
+        HttpURLConnection httpcon = (HttpURLConnection)url.openConnection();
+            httpcon.setConnectTimeout(0);
+        httpcon.addRequestProperty("User-Agent", "Mozilla/4.76");
+
+       if (httpcon.getResponseCode() == 200)
+           return true;
+        }
+
+        catch (UnknownHostException e)
+        {
+            return false;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+
 
     private BufferedReader getBufferFromUrl(String link)
     {
@@ -89,14 +125,23 @@ public class ParserRun implements Callable<HashSet> {
 
         try {
             url = new URL(link);
-            httpcon = (HttpURLConnection)url.openConnection();
+        httpcon = (HttpURLConnection)url.openConnection();
         httpcon.addRequestProperty("User-Agent", "Mozilla/4.76");
+
+
             ISR = new InputStreamReader(httpcon.getInputStream(), "utf-8");
 
         }
+        catch (FileNotFoundException e)
+        {
+            return null;
+        }
+
         catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
+
         return new BufferedReader(ISR);
     }
 }

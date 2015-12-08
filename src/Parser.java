@@ -1,4 +1,5 @@
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -20,6 +21,7 @@ public class Parser {
     private static String mUrlPath;
     private static int mDepth;
     private HashSet<String>  mSetURL;
+    private Set<String> mSynchronSet;
 
 
     public Parser(String URL_HOME, String URL_PATH, int depth)
@@ -29,13 +31,14 @@ public class Parser {
         mDepth = depth;
 
         mExecutor  = Executors.newFixedThreadPool(2);
-        //mSetURL = Collections.synchronizedSet( new HashSet<String>());
-        mSetURL =  new HashSet<String>();
+       // mSetURL =  new HashSet<String>();
+
         start();
     }
 
 
     public void start()  {
+
         firstWalk();
 
     }
@@ -53,7 +56,7 @@ public class Parser {
                 return;
             for (Object o : result.get()) {
                 String tmp = (String) o;
-                tmp = tmp.replace(mUrlHome, "");
+
                 System.out.println(tmp);
 
             }
