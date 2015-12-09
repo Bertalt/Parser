@@ -6,9 +6,9 @@ import java.util.Set;
 
 public class MainActivity{
 
- public static String TEST_URL = "http://www.056.ua";
-    private static String TEST_URL_PATH = "/job";
-    private static int TEST_DEPTH = 1;
+ public static String TEST_URL = "http://gorod.dp.ua";
+    private static String TEST_URL_PATH = "/";
+    private static int TEST_DEPTH =5 ;
     private static HashSet<String> mSetEmails;
     public static Set<String> mSynchronSet;
 
@@ -25,10 +25,14 @@ public class MainActivity{
         String address = TEST_URL; // sc.nextLine();
         mSetEmails = new HashSet<String>();
         mSynchronSet = Collections.synchronizedSet(mSetEmails);
-        Parser mParser = new Parser( new CustomUrl(TEST_URL, TEST_URL_PATH));
+        Parser mParser = new Parser( new CustomUrl(TEST_URL, TEST_URL_PATH), TEST_DEPTH, "mainThread");
 
 
-        for(String s: mSetEmails)
+            mParser.start();
+
+
+
+        for(String s: mSynchronSet)
         {
             System.out.println(s);
         }
@@ -39,8 +43,6 @@ public class MainActivity{
         System.out.println("Время выполнения "+ (finish - start));
 
     }
-
-
 
 
 

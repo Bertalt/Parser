@@ -1,41 +1,70 @@
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * Created by Serg on 09.12.2015.
  */
-public class Parser {
+public class Parser  extends Thread{
 
     private CustomUrl mURL;
+    private int mTaskDepth;
+    private LinkedHashSet<CustomUrl> firstStep;
+    private int mAvailableThreads;
+    private ExecutorService mExecutor;
+    private ArrayList<Future> mFutureList;
 
-
-    private BlockingQueue<CustomUrl> blockingQueue;
-    public static Set<CustomUrl> sSybchorizedSetForNextStep;
-    private int mDepth=2;
-    private int countSteps = 0;
-    public Parser(CustomUrl URL)
+    public Parser(CustomUrl URL, int depth, String name)
     {
+        super(name);
         mURL = new CustomUrl(URL.getHome(),URL.getPath());
-        sSybchorizedSetForNextStep = Collections.synchronizedSet(new LinkedHashSet<CustomUrl>());
-        blockingQueue = new ArrayBlockingQueue<CustomUrl>(Runtime.getRuntime().availableProcessors());
-
-        goAhead();
+        mTaskDepth =depth;
+        firstStep = new LinkedHashSet<>();
+        ParsingWork mParsing = new ParsingWork(mURL);
+        firstStep = mParsing.goAhead();
+        mAvailableThreads = Runtime.getRuntime().availableProcessors();
+        mExecutor = Executors.newFixedThreadPool(mAvailableThreads);
+        mFutureList= new ArrayList<>();
     }
 
-    public void goAhead()
-    {
+    @Override
+    public void run() {
 
-        ParsingWork mParsing = new ParsingWork(mURL);
-        mParsing.goAhead();
-        System.out.println(sSybchorizedSetForNextStep.size());
-        for(CustomUrl tmp : sSybchorizedSetForNextStep)
-        {
-            System.out.println(tmp);
+        int tmp_count= 0;
+
+        if (mTaskDepth <= 1)
+            return;
+        int coef = firstStep.size() / mAvailableThreads;
+        System.out.println("Available threads:  "+ mAvailableThreads);
+        LinkedHashSet<CustomUrl> prepareTask = new LinkedHashSet<>();
+       while(!firstStep.isEmpty()) {
+
+            prepareTask.clear();
+            if (firstStep.size() < coef*2)
+            {
+                prepareTask.addAll(firstStep);
+                mExecutor.submit(new ThreadParser(prepareTask,mTaskDepth, ++tmp_count));
+                firstStep.removeAll(prepareTask);
+                break;
+            }
+            int counter =0;
+            for (CustomUrl tmp: firstStep) {
+                prepareTask.add(tmp);
+                counter++;
+                if (counter>=coef)
+                    break;
+            }
+
+            mFutureList.add(mExecutor.submit(new ThreadParser(prepareTask,mTaskDepth, ++tmp_count)));
+            firstStep.removeAll(prepareTask);
+
         }
 
+        mExecutor.shutdown();
+        try {
+           mExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
-
-
 }

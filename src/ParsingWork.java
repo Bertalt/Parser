@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.LinkedHashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,7 +18,7 @@ public class ParsingWork {
     private final int BUFFER_SIZE = 100000;
     private Pattern PATTERN_URL_DOT;
     private Pattern PATTERN_EMAIL;
-
+    private LinkedHashSet <CustomUrl> foundLinks;
     public static final String REG_EX_URL = "^*((https?|ftp)\\:\\/\\/)?(\\w{1})((\\.\\w)|(\\w))*\\.([a-z]{2,6})(\\/[a-z0-9_/]*)$*";
     public static final String REG_EX_TEL =  "^*((\\+38)?\\(?0\\d{2}?\\)?(\\d{7}|\\d{3}.\\d{2}.\\d{2}))\\+*";
     public static final String REG_EX_EMAIL = "^*([a-z0-9_-]+\\.)*[a-z0-9_-]+@[a-z0-9_-]+(\\.[a-z0-9_-]+)*\\.[a-z]{2,6}$*";
@@ -29,17 +30,17 @@ public class ParsingWork {
         mURL = new CustomUrl(url.getHome(),url.getPath());
         PATTERN_URL_DOT = Pattern.compile(REG_EX_URL_DOT);
         PATTERN_EMAIL = Pattern.compile(REG_EX_EMAIL);
-
+        foundLinks = new LinkedHashSet<>();
     }
 
-    public void goAhead()
+    public LinkedHashSet<CustomUrl> goAhead()
     {
         BufferedReader buffer;
-        // String nextLine = null;
-        try {
+         try {
         StringBuffer mStringBuffer = new StringBuffer();
+             System.out.println(mURL);
         if((buffer = getBufferFromUrl(mURL.toString()))==null) {
-            return;
+            return new LinkedHashSet<>();
         }
 
         int count =0;
@@ -49,20 +50,20 @@ public class ParsingWork {
                 if (buffer.read(nextLine)== -1)
                     break;
 
-
                 mStringBuffer.append(nextLine);
                 count++;
-
 
                 // System.out.println(mStringBuffer.toString());
                 checkStringByPatterns(mStringBuffer.toString());
 
         }
-        System.out.println(count);
+
         buffer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return foundLinks;
     }
 
 
@@ -81,7 +82,7 @@ public class ParsingWork {
                 //if (checkUrl(tmp))
                 //System.out.println(tmp);
             //System.out.println(mURL.getHome()+ " "+ found);
-            Parser.sSybchorizedSetForNextStep.add(new CustomUrl(mURL.getHome(),found));
+            foundLinks.add(new CustomUrl(mURL.getHome(),found));
 
 
         }
@@ -89,7 +90,9 @@ public class ParsingWork {
 
         while(matcher_dot.find())        {
 
-            MainActivity.mSynchronSet.add(s.substring(matcher_dot.start(), matcher_dot.end()));
+           if (  MainActivity.mSynchronSet.add(s.substring(matcher_dot.start(), matcher_dot.end())))
+               System.out.println(s.substring(matcher_dot.start(), matcher_dot.end()));
+          ;
         }
 
 
