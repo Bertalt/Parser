@@ -6,11 +6,14 @@ import java.util.Set;
 
 public class MainActivity{
 
-private static String TEST_URL = "http://www.056.ua";
-    private static String TEST_URL_PATH = "/job/vacancy/full/787787";
+ public static String TEST_URL = "http://www.056.ua";
+    private static String TEST_URL_PATH = "/job";
     private static int TEST_DEPTH = 1;
     private static HashSet<String> mSetEmails;
     public static Set<String> mSynchronSet;
+
+
+
     public static void main(String [] args)  {
         long start = System.currentTimeMillis();
 
@@ -22,13 +25,14 @@ private static String TEST_URL = "http://www.056.ua";
         String address = TEST_URL; // sc.nextLine();
         mSetEmails = new HashSet<String>();
         mSynchronSet = Collections.synchronizedSet(mSetEmails);
+        Parser mParser = new Parser( new CustomUrl(TEST_URL, TEST_URL_PATH));
 
-        Parser mParser = new Parser(TEST_URL, TEST_URL_PATH, TEST_DEPTH);
 
         for(String s: mSetEmails)
         {
             System.out.println(s);
         }
+
 
         long finish = System.currentTimeMillis();
 
