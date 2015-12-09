@@ -13,6 +13,7 @@ public class Parser {
     public static final String REG_EX_EMAIL = "^*([a-z0-9_-]+\\.)*[a-z0-9_-]+@[a-z0-9_-]+(\\.[a-z0-9_-]+)*\\.[a-z]{2,6}$*";
     public static final String REG_EX_URL_DOT = "href=\"^?([a-z0-9_@?^=%&/~+#-]S*)*$*";
 
+
     private ExecutorService mExecutor;
 
 

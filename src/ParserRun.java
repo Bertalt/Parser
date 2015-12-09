@@ -20,10 +20,12 @@ public class ParserRun implements Callable<HashSet> {
 
     private Pattern PATTERN_URL;
     private Pattern PATTERN_URL_DOT;
+    private Pattern PATTERN_EMAIL;
    // private HashSet foundUrl;
     private static String mUrlHome;
     private static String mUrlPath;
     private HashSet<String> mSetUrl;
+
     private final int bufferSize = 100000;
     private Set<String> mSynchronSet;
 
@@ -36,6 +38,7 @@ public class ParserRun implements Callable<HashSet> {
         PATTERN_URL = Pattern.compile(Parser.REG_EX_URL);
         mSynchronSet = Collections.synchronizedSet(mSetUrl);
         PATTERN_URL_DOT = Pattern.compile(Parser.REG_EX_URL_DOT);
+        PATTERN_EMAIL = Pattern.compile(Parser.REG_EX_EMAIL);
     }
 
 
@@ -66,13 +69,13 @@ public class ParserRun implements Callable<HashSet> {
             }
         System.out.println(count);
        // System.out.println(mStringBuffer.toString());
-        checkStringToUrl(mStringBuffer.toString());
+        checkStringByPatterns(mStringBuffer.toString());
 
         buffer.close();
         return mSetUrl;
     }
 
-    private void checkStringToUrl(String s)
+    private void checkStringByPatterns(String s)
     {
 
                 Matcher matcher_dot = PATTERN_URL_DOT.matcher(s);
@@ -82,15 +85,23 @@ public class ParserRun implements Callable<HashSet> {
                     String tmp =(new StringBuilder().append(mUrlHome).append(s.substring((matcher_dot.start()+6),matcher_dot.end()))).toString();
 
                     if(tmp.contains(mUrlHome+mUrlPath))    //проверяем является ли ссылка дочерней относительно исходной
-                        if (checkUrl(tmp))
+                        //if (checkUrl(tmp))
                              mSynchronSet.add(tmp);
 
 
                 }
+        matcher_dot = PATTERN_EMAIL.matcher(s);
+
+        while(matcher_dot.find())
+        {
+            MainActivity.mSynchronSet.add(s.substring(matcher_dot.start(), matcher_dot.end()));
+        }
 
 
 
     }
+
+
 
     private boolean checkUrl(String link)  {
         URL url = null;
